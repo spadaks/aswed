@@ -41,9 +41,9 @@ client.on('messageCreate', async message => {
 
     try {
       await distube.play(voiceChannel, args.join(' '), {
-        textChannel: message.channel,
-        member: message.member
-      });
+  textChannel: message.channel,
+  member: message.member
+});
       message.channel.send(`🎵 Odtwarzam: **${args.join(' ')}**`);
     } catch (err) {
       console.error(err);
@@ -67,3 +67,4 @@ if (!token || token.trim() === '') {
 
 // Logowanie bota
 client.login(token);
+
