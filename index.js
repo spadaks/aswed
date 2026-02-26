@@ -1,8 +1,10 @@
+// index.js
 const { Client, GatewayIntentBits } = require('discord.js');
 const { DisTube } = require('distube');
 const { YtDlpPlugin } = require('@distube/yt-dlp');
-const ffmpegPath = require('ffmpeg-static'); // poprawny path do ffmpeg
+const ffmpegPath = require('ffmpeg-static'); // ffmpeg-static dla Railway
 
+// Discord client
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -12,18 +14,21 @@ const client = new Client({
   ]
 });
 
+// DisTube konfiguracja z poprawionym ffmpeg
 const distube = new DisTube(client, {
   leaveOnEmpty: true,
   leaveOnFinish: true,
   leaveOnStop: true,
-  ffmpegPath: ffmpegPath, // <- kluczowa zmiana
+  ffmpeg: { path: ffmpegPath }, // ✅ poprawne dla DisTube v4+
   plugins: [new YtDlpPlugin()]
 });
 
+// Event: gotowy bot
 client.on('ready', () => {
   console.log(`✅ Zalogowano jako ${client.user.tag}`);
 });
 
+// Komendy Discord
 client.on('messageCreate', async message => {
   if (!message.content.startsWith('!') || message.author.bot) return;
 
@@ -72,7 +77,7 @@ client.on('messageCreate', async message => {
   }
 });
 
-// Logi DisTube
+// Eventy DisTube dla logów
 distube
   .on('playSong', (queue, song) => {
     queue.textChannel.send(`🎶 Odtwarzam: **${song.name}**`);
@@ -85,10 +90,12 @@ distube
     if(channel) channel.send(`❌ Błąd: ${e.message}`);
   });
 
+// Token z Railway Variables
 const token = process.env.TOKEN;
 if (!token || token.trim() === '') {
   console.error('❌ Token bota nie został ustawiony w Railway Variables!');
   process.exit(1);
 }
 
+// Logowanie bota
 client.login(token);
