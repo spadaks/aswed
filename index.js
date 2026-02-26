@@ -1,8 +1,8 @@
 // index.js
 const { Client, GatewayIntentBits } = require('discord.js');
 const { DisTube } = require('distube');
-const { joinVoiceChannel } = require('@discordjs/voice');
-const { YtDlpPlugin } = require('@distube/yt-dlp'); // opcjonalnie, lepsza obsługa YouTube
+const { YtDlpPlugin } = require('@distube/yt-dlp');
+const ffmpegPath = require('ffmpeg-static'); // FFMPEG dla Railway
 
 // Tworzymy klienta Discord
 const client = new Client({
@@ -19,7 +19,9 @@ const distube = new DisTube(client, {
   leaveOnEmpty: true,
   leaveOnFinish: true,
   leaveOnStop: true,
-  plugins: [new YtDlpPlugin()] // wymaga yt-dlp zainstalowanego w Railway
+  youtubeDL: true,
+  ffmpeg: ffmpegPath, // ustawiamy FFMPEG
+  plugins: [new YtDlpPlugin()]
 });
 
 // Event: Bot gotowy
@@ -41,10 +43,9 @@ client.on('messageCreate', async message => {
 
     try {
       await distube.play(voiceChannel, args.join(' '), {
-  textChannel: message.channel,
-  member: message.member
-});
-      message.channel.send(`🎵 Odtwarzam: **${args.join(' ')}**`);
+        textChannel: message.channel,
+        member: message.member
+      });
     } catch (err) {
       console.error(err);
       message.channel.send('❌ Nie udało się odtworzyć utworu.');
@@ -55,16 +56,45 @@ client.on('messageCreate', async message => {
     distube.stop(message);
     message.channel.send('⏹️ Zatrzymano muzykę!');
   }
+
+  if (command === 'skip') {
+    try {
+      distube.skip(message);
+      message.channel.send('⏭️ Pomiń utwór!');
+    } catch (err) {
+      console.error(err);
+      message.channel.send('❌ Nie udało się pominąć utworu.');
+    }
+  }
+
+  if (command === 'queue') {
+    const queue = distube.getQueue(message);
+    if (!queue) return message.channel.send('❌ Kolejka jest pusta!');
+    const q = queue.songs.map((song, i) => `${i+1}. ${song.name}`).join('\n');
+    message.channel.send(`🎶 Kolejka:\n${q}`);
+  }
 });
 
-// WAŻNE: token bierze się tylko z Railway Variables
+// Eventy DisTube (logi)
+distube
+  .on('playSong', (queue, song) => {
+    queue.textChannel.send(`🎶 Odtwarzam: **${song.name}**`);
+  })
+  .on('addSong', (queue, song) => {
+    queue.textChannel.send(`➕ Dodano do kolejki: **${song.name}**`);
+  })
+  .on('error', (channel, e) => {
+    console.error(e);
+    if(channel) channel.send(`❌ Błąd: ${e}`);
+  });
+
+// Token bierze się tylko z Railway Variables
 const token = process.env.TOKEN;
 
 if (!token || token.trim() === '') {
   console.error('❌ Token bota nie został ustawiony! Sprawdź Railway Variables.');
-  process.exit(1); // zatrzymujemy bota jeśli token nie istnieje
+  process.exit(1);
 }
 
 // Logowanie bota
 client.login(token);
-
