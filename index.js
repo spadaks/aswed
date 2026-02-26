@@ -4,7 +4,7 @@ const { DisTube } = require('distube');
 const { YtDlpPlugin } = require('@distube/yt-dlp');
 const ffmpegPath = require('ffmpeg-static'); // FFMPEG dla Railway
 
-// Tworzymy klienta Discord
+// Klient Discord
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -14,30 +14,30 @@ const client = new Client({
   ]
 });
 
-// Inicjalizacja DisTube (muzyka)
+// DisTube konfiguracja
 const distube = new DisTube(client, {
   leaveOnEmpty: true,
   leaveOnFinish: true,
   leaveOnStop: true,
-  youtubeDL: true,
   ffmpeg: ffmpegPath, // ustawiamy FFMPEG
-  plugins: [new YtDlpPlugin()]
+  plugins: [new YtDlpPlugin()] // obsługa YouTube
 });
 
-// Event: Bot gotowy
+// Bot gotowy
 client.on('ready', () => {
   console.log(`✅ Zalogowano jako ${client.user.tag}`);
 });
 
-// Event: Wiadomość
+// Komendy
 client.on('messageCreate', async message => {
   if (!message.content.startsWith('!') || message.author.bot) return;
 
   const args = message.content.slice(1).trim().split(/ +/g);
   const command = args.shift().toLowerCase();
 
+  const voiceChannel = message.member.voice.channel;
+
   if (command === 'play') {
-    const voiceChannel = message.member.voice.channel;
     if (!voiceChannel) return message.reply('Musisz wejść na kanał głosowy!');
     if (!args[0]) return message.reply('Podaj link lub nazwę utworu!');
 
@@ -75,7 +75,7 @@ client.on('messageCreate', async message => {
   }
 });
 
-// Eventy DisTube (logi)
+// Logi DisTube
 distube
   .on('playSong', (queue, song) => {
     queue.textChannel.send(`🎶 Odtwarzam: **${song.name}**`);
@@ -88,7 +88,7 @@ distube
     if(channel) channel.send(`❌ Błąd: ${e}`);
   });
 
-// Token bierze się tylko z Railway Variables
+// Token z Railway Variables
 const token = process.env.TOKEN;
 
 if (!token || token.trim() === '') {
