@@ -1,10 +1,8 @@
-// index.js
 const { Client, GatewayIntentBits } = require('discord.js');
 const { DisTube } = require('distube');
 const { YtDlpPlugin } = require('@distube/yt-dlp');
-const ffmpegPath = require('ffmpeg-static'); // FFMPEG dla Railway
+const ffmpegPath = require('ffmpeg-static'); // poprawny path do ffmpeg
 
-// Klient Discord
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -14,27 +12,23 @@ const client = new Client({
   ]
 });
 
-// DisTube konfiguracja
 const distube = new DisTube(client, {
   leaveOnEmpty: true,
   leaveOnFinish: true,
   leaveOnStop: true,
-  ffmpeg: ffmpegPath, // ustawiamy FFMPEG
-  plugins: [new YtDlpPlugin()] // obsługa YouTube
+  ffmpegPath: ffmpegPath, // <- kluczowa zmiana
+  plugins: [new YtDlpPlugin()]
 });
 
-// Bot gotowy
 client.on('ready', () => {
   console.log(`✅ Zalogowano jako ${client.user.tag}`);
 });
 
-// Komendy
 client.on('messageCreate', async message => {
   if (!message.content.startsWith('!') || message.author.bot) return;
 
   const args = message.content.slice(1).trim().split(/ +/g);
   const command = args.shift().toLowerCase();
-
   const voiceChannel = message.member.voice.channel;
 
   if (command === 'play') {
@@ -48,22 +42,25 @@ client.on('messageCreate', async message => {
       });
     } catch (err) {
       console.error(err);
-      message.channel.send('❌ Nie udało się odtworzyć utworu.');
+      message.channel.send(`❌ Nie udało się odtworzyć utworu: ${err.message}`);
     }
   }
 
   if (command === 'stop') {
-    distube.stop(message);
-    message.channel.send('⏹️ Zatrzymano muzykę!');
+    try {
+      distube.stop(message);
+      message.channel.send('⏹️ Zatrzymano muzykę!');
+    } catch {
+      message.channel.send('❌ Brak kolejki do zatrzymania!');
+    }
   }
 
   if (command === 'skip') {
     try {
       distube.skip(message);
       message.channel.send('⏭️ Pomiń utwór!');
-    } catch (err) {
-      console.error(err);
-      message.channel.send('❌ Nie udało się pominąć utworu.');
+    } catch {
+      message.channel.send('❌ Brak kolejki do pominięcia!');
     }
   }
 
@@ -85,16 +82,13 @@ distube
   })
   .on('error', (channel, e) => {
     console.error(e);
-    if(channel) channel.send(`❌ Błąd: ${e}`);
+    if(channel) channel.send(`❌ Błąd: ${e.message}`);
   });
 
-// Token z Railway Variables
 const token = process.env.TOKEN;
-
 if (!token || token.trim() === '') {
-  console.error('❌ Token bota nie został ustawiony! Sprawdź Railway Variables.');
+  console.error('❌ Token bota nie został ustawiony w Railway Variables!');
   process.exit(1);
 }
 
-// Logowanie bota
 client.login(token);
