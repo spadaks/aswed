@@ -6,10 +6,12 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "discord.js": "^14.14.1",
-    "distube": "^4.0.4",
-    "@discordjs/voice": "^0.16.0",
-    "ffmpeg-static": "^5.2.0",
-    "ytdl-core": "^4.11.5"
+  "discord.js": "^14.14.1",
+  "distube": "^4.0.4",
+  "@discordjs/voice": "^0.16.0",
+  "ffmpeg-static": "^5.2.0",
+  "ytdl-core": "^4.11.5",
+  "@distube/yt-dlp": "^1.0.0"
   }
+
 }
